@@ -65,6 +65,29 @@ class TestServer(unittest.TestCase):
             self.assertIn("total_expense", data)
             self.assertIn("category_breakdown", data)
 
+    def test_simulate_api_exact_salary(self):
+        url = f"{self.base_url}/api/simulate"
+        payload = {
+            "starting_balance": 4000.0,
+            "base_monthly_income": 3000.0,
+            "base_fixed_expense": 1000.0,
+            "base_variable_expense": 1000.0,
+            "scenario_monthly_income": 3800.0,
+            "fixed_delta_eur": 0.0,
+            "variable_delta_pct": 0.0
+        }
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req) as resp:
+            self.assertEqual(resp.status, 200)
+            data = json.loads(resp.read().decode("utf-8"))
+            self.assertEqual(data["scenario_monthly_income"], 3800.0)
+            self.assertEqual(data["scenario_monthly_net"], 1800.0)
+
     def test_simulate_api(self):
         url = f"{self.base_url}/api/simulate"
         payload = {

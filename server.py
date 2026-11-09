@@ -159,12 +159,17 @@ class ExpenseTrackerHandler(BaseHTTPRequestHandler):
 
         elif path == "/api/simulate":
             body = self._read_json_body()
+            scen_income = body.get("scenario_monthly_income")
+            if scen_income is not None:
+                scen_income = float(scen_income)
+
             res = analytics.simulate_scenarios(
                 starting_balance=float(body.get("starting_balance", 0.0)),
                 base_monthly_income=float(body.get("base_monthly_income", 0.0)),
                 base_fixed_expense=float(body.get("base_fixed_expense", 0.0)),
                 base_variable_expense=float(body.get("base_variable_expense", 0.0)),
                 income_delta_pct=float(body.get("income_delta_pct", 0.0)),
+                scenario_monthly_income=scen_income,
                 fixed_delta_eur=float(body.get("fixed_delta_eur", 0.0)),
                 variable_delta_pct=float(body.get("variable_delta_pct", 0.0)),
                 months=int(body.get("months", 12))
