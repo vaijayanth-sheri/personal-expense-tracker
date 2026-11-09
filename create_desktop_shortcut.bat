@@ -2,13 +2,12 @@
 setlocal
 cd /d "%~dp0"
 
-echo Creating Desktop Shortcut for Personal Expense Tracker...
+echo Updating Desktop Shortcut with custom Vault Icon...
 
 set "TARGET_SCRIPT=%~dp0run_app.vbs"
-set "ICON_PATH=%SystemRoot%\System32\shell32.dll,303"
+set "ICON_FILE=%~dp0assets\icon.ico"
 
-powershell -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\Personal Expense Tracker.lnk'); $s.TargetPath = 'wscript.exe'; $s.Arguments = '\"%TARGET_SCRIPT%\"'; $s.WorkingDirectory = '%~dp0'; $s.IconLocation = 'shell32.dll, 303'; $s.Save()"
+powershell -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\Personal Expense Tracker.lnk'); $s.TargetPath = 'wscript.exe'; $s.Arguments = '\"%TARGET_SCRIPT%\"'; $s.WorkingDirectory = '%~dp0'; $s.IconLocation = '%ICON_FILE%'; $s.Save()"
 
-echo [SUCCESS] Desktop Shortcut created on your Desktop!
-echo You can now simply double-click "Personal Expense Tracker" on your Desktop to launch your app.
-pause
+echo [SUCCESS] Desktop Shortcut updated with custom geometric vault icon!
+exit /b 0
