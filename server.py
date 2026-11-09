@@ -63,6 +63,90 @@ class ExpenseTrackerHandler(BaseHTTPRequestHandler):
             self._serve_static(path)
 
     def _handle_api_get(self, path: str, query: Dict[str, Any]) -> None:
+        # Existing endpoints
+        if path == "/api/transactions":
+            tx_type = query.get("type", [None])[0]
+            category = query.get("category", [None])[0]
+            start_date = query.get("start_date", [None])[0]
+            end_date = query.get("end_date", [None])[0]
+            search = query.get("search", [None])[0]
+
+            transactions = database.get_transactions(
+                db_path=self.db_path,
+                tx_type=tx_type,
+                category=category,
+                start_date=start_date,
+                end_date=end_date,
+                search=search
+            )
+            self._send_json({"transactions": transactions})
+            return
+        elif path == "/api/summary":
+            summary = database.get_summary(self.db_path)
+            settings = database.get_all_settings(self.db_path)
+            starting_bal = float(settings.get("starting_balance", "0.0") or 0.0)
+            target_reserve = float(settings.get("target_reserve", "5000.0") or 5000.0)
+
+            current_balance = starting_bal + summary["net_savings"]
+
+            variable_expense = max(0.0, summary["total_expense"] - summary["recurring_fixed_expense"])
+            net_monthly_burn = summary["total_expense"] - summary["total_income"]
+            runway = analytics.calculate_runway(current_balance, net_monthly_burn)
+
+            response = {
+                **summary,
+                "starting_balance": starting_bal,
+                "current_balance": round(current_balance, 2),
+                "variable_expense": round(variable_expense, 2),
+                "target_reserve": target_reserve,
+                "runway": runway,
+                "settings": settings
+            }
+            self._send_json(response)
+            return
+        elif path == "/api/settings":
+            settings = database.get_all_settings(self.db_path)
+            self._send_json({"settings": settings})
+            return
+        elif path == "/api/export":
+            # Export transactions as CSV
+            transactions = database.get_transactions(self.db_path)
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(["ID", "Date", "Type", "Category", "Amount (EUR)", "Note", "Recurring", "Created At"])
+            for t in transactions:
+                writer.writerow([
+                    t["id"], t["date"], t["type"], t["category"],
+                    t["amount"], t["note"], t["is_recurring"], t["created_at"]
+                ])
+            csv_data = output.getvalue().encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header("Content-Disposition", "attachment; filename=\"personal_expenses.csv\"")
+            self.send_header("Content-Length", str(len(csv_data)))
+            self.end_headers()
+            self.wfile.write(csv_data)
+            return
+        elif path == "/api/backup":
+            # List available backups
+            backups = database.list_backups()
+            self._send_json({"backups": backups})
+            return
+        elif path == "/api/duplicate_transactions":
+            dup_ids = database.find_duplicate_transactions(self.db_path)
+            self._send_json({"duplicate_ids": dup_ids})
+            return
+        elif path == "/api/budget_limits":
+            limits = database.get_budget_limits(self.db_path)
+            self._send_json({"budget_limits": limits})
+            return
+        elif path == "/api/theme":
+            prefs = database.get_theme_preferences(self.db_path)
+            self._send_json({"theme": prefs})
+            return
+        else:
+            self._send_json({"error": "Endpoint not found"}, 404)
+            return
         if path == "/api/transactions":
             tx_type = query.get("type", [None])[0]
             category = query.get("category", [None])[0]

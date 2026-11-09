@@ -46,7 +46,24 @@ def calculate_needed_savings(
     }
 
 
-def simulate_scenarios(
+def financial_health_score(savings_rate: float, cash_reserve: float, target_reserve: float) -> str:
+    """Simple health scoring:
+    - Good: savings_rate >= 20% and cash_reserve >= target_reserve
+    - Medium: savings_rate >= 10% or cash_reserve >= target_reserve/2
+    - Poor: otherwise"""
+    if savings_rate >= 20.0 and cash_reserve >= target_reserve:
+        return "Good"
+    if savings_rate >= 10.0 or cash_reserve >= (target_reserve / 2):
+        return "Medium"
+    return "Poor"
+
+def emergency_fund_months(savings: float, essential_monthly: float) -> float:
+    """Estimate how many months of essential expenses the current savings cover.
+    Returns months (float)."""
+    if essential_monthly <= 0:
+        return float('inf')
+    return round(savings / essential_monthly, 1)
+
     starting_balance: float,
     base_monthly_income: float,
     base_fixed_expense: float,

@@ -6,6 +6,8 @@ Uses embedded SQLite to store transactions and user preferences locally.
 import os
 import sqlite3
 from typing import List, Dict, Any, Optional
+import shutil
+import datetime
 
 DEFAULT_DB_PATH = os.path.join(os.path.dirname(__file__), "data", "expenses.db")
 
@@ -36,6 +38,25 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS budget_limits (
+                category TEXT PRIMARY KEY,
+                limit_amount REAL NOT NULL
+            )
+        """)
+        conn.execute("""
+            ALTER TABLE transactions ADD COLUMN currency_code TEXT DEFAULT 'EUR'
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS subscriptions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                amount REAL NOT NULL,
+                frequency TEXT NOT NULL CHECK(frequency IN ('monthly','annual')),
+                next_due TEXT NOT NULL,
+                note TEXT
             )
         """)
     conn.close()
@@ -208,3 +229,128 @@ def get_all_settings(db_path: str = DEFAULT_DB_PATH) -> Dict[str, str]:
     settings = {row["key"]: row["value"] for row in cursor.fetchall()}
     conn.close()
     return settings
+
+# Budget limits management
+def set_budget_limit(db_path: str, category: str, limit_amount: float) -> None:
+    conn = get_connection(db_path)
+    with conn:
+        conn.execute(
+            "INSERT INTO budget_limits (category, limit_amount) VALUES (?, ?) ON CONFLICT(category) DO UPDATE SET limit_amount=excluded.limit_amount",
+            (category, limit_amount),
+        )
+    conn.close()
+
+def get_budget_limits(db_path: str) -> Dict[str, float]:
+    conn = get_connection(db_path)
+    cursor = conn.execute("SELECT category, limit_amount FROM budget_limits")
+    limits = {row["category"]: float(row["limit_amount"]) for row in cursor.fetchall()}
+    conn.close()
+    return limits
+
+def delete_budget_limit(db_path: str, category: str) -> bool:
+    conn = get_connection(db_path)
+    with conn:
+        cursor = conn.execute("DELETE FROM budget_limits WHERE category = ?", (category,))
+        deleted = cursor.rowcount > 0
+    conn.close()
+    return deleted
+
+# Theme preferences management
+def set_theme_preference(db_path: str, key: str, value: str) -> None:
+    conn = get_connection(db_path)
+    with conn:
+        conn.execute(
+            "INSERT INTO theme_preferences (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (key, value),
+        )
+    conn.close()
+
+def get_theme_preferences(db_path: str) -> Dict[str, str]:
+    conn = get_connection(db_path)
+    cursor = conn.execute("SELECT key, value FROM theme_preferences")
+    prefs = {row["key"]: row["value"] for row in cursor.fetchall()}
+    conn.close()
+    return prefs
+
+# ----- Backup & Restore -----
+
+def backup_database(db_path: str = DEFAULT_DB_PATH, backup_dir: str = os.path.join(os.path.dirname(__file__), 'backups')) -> str:
+    """Create a timestamped backup of the SQLite database.
+    Returns the backup file path."""
+    os.makedirs(backup_dir, exist_ok=True)
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    backup_path = os.path.join(backup_dir, f'expenses_backup_{timestamp}.db')
+    shutil.copy2(db_path, backup_path)
+    return backup_path
+
+def list_backups(backup_dir: str = os.path.join(os.path.dirname(__file__), 'backups')) -> list:
+    """Return a list of backup file names sorted newest first."""
+    if not os.path.isdir(backup_dir):
+        return []
+    files = [f for f in os.listdir(backup_dir) if f.endswith('.db')]
+    files.sort(reverse=True)
+    return files
+
+def restore_database(backup_file: str, db_path: str = DEFAULT_DB_PATH, backup_dir: str = os.path.join(os.path.dirname(__file__), 'backups')) -> bool:
+    """Replace the current DB with the specified backup.
+    Returns True on success."""
+    backup_path = os.path.join(backup_dir, backup_file)
+    if not os.path.isfile(backup_path):
+        return False
+    shutil.copy2(backup_path, db_path)
+    return True
+
+# ----- Duplicate detection -----
+
+def find_duplicate_transactions(db_path: str = DEFAULT_DB_PATH) -> list:
+    """Return a list of transaction IDs that appear duplicated (same date, amount, category, note)."""
+    conn = get_connection(db_path)
+    cursor = conn.execute('''
+        SELECT id FROM transactions WHERE (date, amount, category, note) IN (
+            SELECT date, amount, category, note FROM transactions
+            GROUP BY date, amount, category, note HAVING COUNT(*) > 1
+        )
+        ORDER BY date DESC
+    ''')
+    dup_ids = [row['id'] for row in cursor.fetchall()]
+    conn.close()
+    return dup_ids
+
+# Subscription management functions
+def add_subscription(db_path: str, name: str, amount: float, frequency: str, next_due: str, note: str = "") -> int:
+    conn = get_connection(db_path)
+    with conn:
+        cursor = conn.execute(
+            "INSERT INTO subscriptions (name, amount, frequency, next_due, note) VALUES (?, ?, ?, ?, ?)",
+            (name, amount, frequency, next_due, note),
+        )
+        sub_id = cursor.lastrowid
+    conn.close()
+    return sub_id
+
+def get_subscriptions(db_path: str) -> List[Dict[str, Any]]:
+    conn = get_connection(db_path)
+    cursor = conn.execute("SELECT * FROM subscriptions")
+    subs = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return subs
+
+def update_subscription(db_path: str, sub_id: int, name: str, amount: float, frequency: str, next_due: str, note: str = "") -> bool:
+    conn = get_connection(db_path)
+    with conn:
+        cursor = conn.execute(
+            "UPDATE subscriptions SET name = ?, amount = ?, frequency = ?, next_due = ?, note = ? WHERE id = ?",
+            (name, amount, frequency, next_due, note, sub_id),
+        )
+        updated = cursor.rowcount > 0
+    conn.close()
+    return updated
+
+def delete_subscription(db_path: str, sub_id: int) -> bool:
+    conn = get_connection(db_path)
+    with conn:
+        cursor = conn.execute("DELETE FROM subscriptions WHERE id = ?", (sub_id,))
+        deleted = cursor.rowcount > 0
+    conn.close()
+    return deleted
+
