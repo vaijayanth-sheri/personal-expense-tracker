@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Expense Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <span class="logo-icon">💶</span>
+        <div>
+          <h1>Personal Expense Tracker</h1>
+          <p class="subtitle">100% Local • Private • Lightweight</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-export-csv" class="btn btn-secondary" title="Export transactions to CSV">📥 Export CSV</button>
+        <button id="btn-settings-modal" class="btn btn-secondary" title="Initial balance and preferences">⚙️ Settings</button>
+      </div>
+    </header>
+
+    <!-- Top KPI Cards -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Current Balance</div>
+        <div id="kpi-current-balance" class="kpi-value text-primary">€0.00</div>
+        <div class="kpi-hint">Base + Net Flow</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Monthly Inflow</div>
+        <div id="kpi-monthly-income" class="kpi-value text-success">€0.00</div>
+        <div class="kpi-hint"><span id="kpi-recurring-income">€0.00</span> fixed</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Monthly Outflow</div>
+        <div id="kpi-monthly-expense" class="kpi-value text-danger">€0.00</div>
+        <div class="kpi-hint"><span id="kpi-recurring-expense">€0.00</span> fixed</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Runway Status</div>
+        <div id="kpi-runway" class="kpi-value text-info">--</div>
+        <div class="kpi-hint" id="kpi-net-flow">Net: €0.00 / mo</div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="tab-ledger">Transactions & Overview</button>
+      <button class="tab-btn" data-tab="tab-scenarios">Runway & Scenario Simulator</button>
+    </nav>
+
+    <!-- Tab 1: Ledger & Overview -->
+    <main id="tab-ledger" class="tab-content active">
+      <!-- Quick Add Form -->
+      <section class="card quick-add-card">
+        <h3>Add Transaction</h3>
+        <form id="form-add-transaction" class="quick-add-form">
+          <div class="form-group">
+            <label for="tx-type">Type</label>
+            <select id="tx-type" required>
+              <option value="expense">Expense (-)</option>
+              <option value="income">Income (+)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="tx-amount">Amount (€)</label>
+            <input type="number" id="tx-amount" step="0.01" min="0.01" placeholder="0.00" required>
+          </div>
+          <div class="form-group">
+            <label for="tx-category">Category</label>
+            <select id="tx-category" required>
+              <option value="Food & Groceries">Food & Groceries</option>
+              <option value="Housing & Rent">Housing & Rent</option>
+              <option value="Utilities & Bills">Utilities & Bills</option>
+              <option value="Transport & Mobility">Transport & Mobility</option>
+              <option value="Leisure & Entertainment">Leisure & Entertainment</option>
+              <option value="Health & Personal Care">Health & Personal Care</option>
+              <option value="Shopping & Gadgets">Shopping & Gadgets</option>
+              <option value="Salary & Wages">Salary & Wages</option>
+              <option value="Side Income">Side Income</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="tx-date">Date</label>
+            <input type="date" id="tx-date" required>
+          </div>
+          <div class="form-group flex-2">
+            <label for="tx-note">Note (optional)</label>
+            <input type="text" id="tx-note" placeholder="e.g. Supermarket, train pass">
+          </div>
+          <div class="form-group checkbox-group">
+            <label for="tx-recurring">
+              <input type="checkbox" id="tx-recurring"> Recurring
+            </label>
+          </div>
+          <div class="form-group form-actions">
+            <button type="submit" class="btn btn-primary">+ Add</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Visual Breakdown & Search -->
+      <div class="dashboard-split">
+        <section class="card breakdown-section">
+          <div class="card-header">
+            <h3>Spending by Category</h3>
+          </div>
+          <div id="category-bars" class="category-bars-container">
+            <p class="text-muted">No expenses recorded yet.</p>
+          </div>
+        </section>
+
+        <section class="card transactions-section">
+          <div class="card-header flex-between">
+            <h3>Transaction History</h3>
+            <div class="table-filters">
+              <input type="text" id="filter-search" placeholder="Search notes/category...">
+              <select id="filter-type">
+                <option value="">All Types</option>
+                <option value="expense">Expenses Only</option>
+                <option value="income">Income Only</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Category</th>
+                  <th>Note</th>
+                  <th>Amount (€)</th>
+                  <th>Recurring</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="transactions-table-body">
+                <tr><td colspan="6" class="text-center text-muted">Loading transactions...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Tab 2: Scenario & Prediction Simulator -->
+    <main id="tab-scenarios" class="tab-content">
+      <div class="scenario-layout">
+        <!-- Controls Column -->
+        <section class="card scenario-controls">
+          <h3>Scenario "What-If" Controls</h3>
+          <p class="text-muted font-sm">Tweak variables to see how your runway and future net worth respond over time.</p>
+
+          <div class="control-box">
+            <div class="slider-header">
+              <label for="slider-income">Income Change: <span id="val-income" class="badge">0%</span></label>
+            </div>
+            <input type="range" id="slider-income" min="-50" max="50" step="5" value="0">
+            <span class="range-hint">-50% (Job loss/cut) to +50% (Raise/Side project)</span>
+          </div>
+
+          <div class="control-box">
+            <div class="slider-header">
+              <label for="slider-fixed">Fixed Cost Adjustment: <span id="val-fixed" class="badge">€0</span></label>
+            </div>
+            <input type="range" id="slider-fixed" min="-500" max="1000" step="50" value="0">
+            <span class="range-hint">-€500 (cheaper flat) to +€1,000 (rent rise/extra loans)</span>
+          </div>
+
+          <div class="control-box">
+            <div class="slider-header">
+              <label for="slider-variable">Discretionary Spending Change: <span id="val-variable" class="badge">0%</span></label>
+            </div>
+            <input type="range" id="slider-variable" min="-100" max="100" step="10" value="0">
+            <span class="range-hint">-100% (monk mode austerity) to +100% (lifestyle inflation)</span>
+          </div>
+
+          <div class="scenario-actions">
+            <button id="btn-reset-scenarios" class="btn btn-secondary">↺ Reset Sliders</button>
+          </div>
+        </section>
+
+        <!-- Projection Results Column -->
+        <section class="card scenario-results">
+          <h3>Future Balance Projections</h3>
+          <div class="projection-cards">
+            <div class="proj-card">
+              <span class="proj-title">In 3 Months</span>
+              <span id="proj-3m" class="proj-value">€0.00</span>
+              <span id="proj-3m-delta" class="proj-delta font-sm"></span>
+            </div>
+            <div class="proj-card">
+              <span class="proj-title">In 6 Months</span>
+              <span id="proj-6m" class="proj-value">€0.00</span>
+              <span id="proj-6m-delta" class="proj-delta font-sm"></span>
+            </div>
+            <div class="proj-card highlight">
+              <span class="proj-title">In 12 Months</span>
+              <span id="proj-12m" class="proj-value">€0.00</span>
+              <span id="proj-12m-delta" class="proj-delta font-sm"></span>
+            </div>
+          </div>
+
+          <div class="runway-insight-box">
+            <h4>💡 Financial Insight</h4>
+            <div id="scenario-insight-text" class="insight-text">
+              Adjust sliders on the left to simulate personal scenarios.
+            </div>
+          </div>
+
+          <!-- Pure Canvas Chart -->
+          <div class="chart-container">
+            <h4>12-Month Trajectory: Baseline vs. Scenario</h4>
+            <canvas id="scenario-chart" width="700" height="260"></canvas>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-color baseline-color"></span> Baseline Forecast</span>
+              <span class="legend-item"><span class="legend-color scenario-color"></span> Scenario Simulation</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="modal-settings" class="modal-backdrop hidden">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>Personal Settings & Starting Balance</h3>
+          <button id="btn-close-settings" class="btn-close">×</button>
+        </div>
+        <div class="modal-body">
+          <form id="form-settings">
+            <div class="form-group mb-3">
+              <label for="setting-start-balance">Starting Bank / Cash Balance (€)</label>
+              <input type="number" id="setting-start-balance" step="0.01" placeholder="0.00">
+              <small class="text-muted">The initial balance you started tracking with.</small>
+            </div>
+            <div class="form-group mb-3">
+              <label for="setting-target-reserve">Target Emergency Reserve (€)</label>
+              <input type="number" id="setting-target-reserve" step="100" placeholder="5000.00">
+              <small class="text-muted">Target safety cushion amount.</small>
+            </div>
+            <div class="modal-footer">
+              <button type="button" id="btn-cancel-settings" class="btn btn-secondary">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Settings</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Transaction Modal -->
+    <div id="modal-edit" class="modal-backdrop hidden">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>Edit Transaction</h3>
+          <button id="btn-close-edit" class="btn-close">×</button>
+        </div>
+        <div class="modal-body">
+          <form id="form-edit-transaction">
+            <input type="hidden" id="edit-id">
+            <div class="form-group mb-3">
+              <label for="edit-type">Type</label>
+              <select id="edit-type" required>
+                <option value="expense">Expense (-)</option>
+                <option value="income">Income (+)</option>
+              </select>
+            </div>
+            <div class="form-group mb-3">
+              <label for="edit-amount">Amount (€)</label>
+              <input type="number" id="edit-amount" step="0.01" min="0.01" required>
+            </div>
+            <div class="form-group mb-3">
+              <label for="edit-category">Category</label>
+              <select id="edit-category" required>
+                <option value="Food & Groceries">Food & Groceries</option>
+                <option value="Housing & Rent">Housing & Rent</option>
+                <option value="Utilities & Bills">Utilities & Bills</option>
+                <option value="Transport & Mobility">Transport & Mobility</option>
+                <option value="Leisure & Entertainment">Leisure & Entertainment</option>
+                <option value="Health & Personal Care">Health & Personal Care</option>
+                <option value="Shopping & Gadgets">Shopping & Gadgets</option>
+                <option value="Salary & Wages">Salary & Wages</option>
+                <option value="Side Income">Side Income</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group mb-3">
+              <label for="edit-date">Date</label>
+              <input type="date" id="edit-date" required>
+            </div>
+            <div class="form-group mb-3">
+              <label for="edit-note">Note</label>
+              <input type="text" id="edit-note">
+            </div>
+            <div class="form-group mb-3">
+              <label for="edit-recurring">
+                <input type="checkbox" id="edit-recurring"> Recurring monthly item
+              </label>
+            </div>
+            <div class="modal-footer">
+              <button type="button" id="btn-cancel-edit" class="btn btn-secondary">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
