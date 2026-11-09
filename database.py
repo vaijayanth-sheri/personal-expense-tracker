@@ -46,9 +46,12 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
                 limit_amount REAL NOT NULL
             )
         """)
-        conn.execute("""
-            ALTER TABLE transactions ADD COLUMN currency_code TEXT DEFAULT 'EUR'
-        """)
+        try:
+            conn.execute("""
+                ALTER TABLE transactions ADD COLUMN currency_code TEXT DEFAULT 'EUR'
+            """)
+        except Exception:
+            pass
         conn.execute("""
             CREATE TABLE IF NOT EXISTS subscriptions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,6 +60,13 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
                 frequency TEXT NOT NULL CHECK(frequency IN ('monthly','annual')),
                 next_due TEXT NOT NULL,
                 note TEXT
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS client_tx_refs (
+                client_tx_id TEXT PRIMARY KEY,
+                server_tx_id INTEGER NOT NULL,
+                FOREIGN KEY(server_tx_id) REFERENCES transactions(id)
             )
         """)
     conn.close()
@@ -69,9 +79,23 @@ def add_transaction(
     category: str,
     amount: float,
     note: str = "",
-    is_recurring: int = 0
+    is_recurring: int = 0,
+    client_tx_id: Optional[str] = None
 ) -> int:
+    """Add a transaction. If `client_tx_id` is provided and already recorded,
+    the function returns the existing server transaction ID to avoid duplication."""
     conn = get_connection(db_path)
+    # If a client transaction ID is supplied, check for existing mapping
+    if client_tx_id:
+        cursor = conn.execute(
+            "SELECT server_tx_id FROM client_tx_refs WHERE client_tx_id = ?",
+            (client_tx_id,)
+        )
+        row = cursor.fetchone()
+        if row:
+            # Already synced – return existing server ID
+            conn.close()
+            return int(row["server_tx_id"])
     with conn:
         cursor = conn.execute(
             """
@@ -81,8 +105,13 @@ def add_transaction(
             (tx_date, tx_type, category, float(amount), note, int(is_recurring))
         )
         tx_id = cursor.lastrowid
-    conn.close()
-    return tx_id
+        # Record client_tx_id mapping if supplied
+        if client_tx_id:
+            conn.execute(
+                "INSERT INTO client_tx_refs (client_tx_id, server_tx_id) VALUES (?, ?)",
+                (client_tx_id, tx_id)
+            )
+
 
 
 def get_transactions(

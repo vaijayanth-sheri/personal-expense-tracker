@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Expense Tracker (Mobile)</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="../icon.png" />
+    <style>
+        body {font-family: Arial, sans-serif; margin:1rem;}
+        .form-group {margin-bottom:0.5rem;}
+        label {display:block; font-weight: bold;}
+        input, select {width:100%; padding:0.4rem;}
+        button {padding:0.5rem 1rem; margin-top:0.5rem;}
+        .status-list {margin-top:1rem;}
+        .status-item {border:1px solid #ccc; padding:0.5rem; margin-bottom:0.5rem;}
+    </style>
+</head>
+<body>
+    <h1>Expense Tracker (Mobile)</h1>
+    <form id="txForm">
+        <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date" required />
+        </div>
+        <div class="form-group">
+            <label for="type">Type</label>
+            <select id="type" required>
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="category">Category</label>
+            <input type="text" id="category" required />
+        </div>
+        <div class="form-group">
+            <label for="amount">Amount (€)</label>
+            <input type="number" step="0.01" id="amount" required />
+        </div>
+        <div class="form-group">
+            <label for="note">Note</label>
+            <input type="text" id="note" />
+        </div>
+        <div class="form-group">
+            <label for="is_recurring">Recurring</label>
+            <select id="is_recurring">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+            </select>
+        </div>
+        <button type="submit">Add Transaction</button>
+    </form>
+
+    <div class="status-list" id="statusList"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

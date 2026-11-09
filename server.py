@@ -229,7 +229,8 @@ class ExpenseTrackerHandler(BaseHTTPRequestHandler):
                     category=body.get("category", "Other"),
                     amount=float(body.get("amount", 0.0)),
                     note=body.get("note", ""),
-                    is_recurring=int(body.get("is_recurring", 0))
+                    is_recurring=int(body.get("is_recurring", 0)),
+                    client_tx_id=body.get("client_tx_id")
                 )
                 self._send_json({"success": True, "id": tx_id}, 201)
             except Exception as e:
