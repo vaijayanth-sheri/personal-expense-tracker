@@ -24,6 +24,26 @@ class TestAnalytics(unittest.TestCase):
         self.assertEqual(result["total_needed"], 3000.0)
         self.assertEqual(result["monthly_savings_needed"], 500.0)
 
+    def test_simulate_scenarios_exact_salary(self):
+        # Base: Income 3000, Fixed 1000, Variable 1000 => Net monthly +1000
+        # What if exact salary becomes 4200/mo?
+        # Fixed +100 (1100), Variable -10% (-100 => 900)
+        # Net monthly: 4200 - 1100 - 900 = +2200
+        sim = analytics.simulate_scenarios(
+            starting_balance=5000.0,
+            base_monthly_income=3000.0,
+            base_fixed_expense=1000.0,
+            base_variable_expense=1000.0,
+            scenario_monthly_income=4200.0,
+            fixed_delta_eur=100.0,
+            variable_delta_pct=-10.0,
+            months=12
+        )
+        self.assertEqual(sim["scenario_monthly_income"], 4200.0)
+        self.assertEqual(sim["scenario_monthly_net"], 2200.0)
+        self.assertEqual(sim["scenario_timeline"][0]["projected_balance"], 7200.0)
+        self.assertEqual(sim["scenario_timeline"][11]["projected_balance"], 5000.0 + 2200.0 * 12)
+
     def test_simulate_scenarios(self):
         # Base: Income 3000, Fixed 1000, Variable 1000 => Net monthly +1000
         # Scenario: Income drops by 10% (-300 => 2700), Fixed goes up by 200 (1200), Variable drops by 20% (800)
