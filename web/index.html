@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Personal Expense Tracker</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="256x256" href="/icon.png">
+  <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,37 +14,55 @@
     <!-- Header -->
     <header class="app-header">
       <div class="logo-area">
-        <span class="logo-icon">💶</span>
+        <img src="/icon.png" alt="App Icon" class="app-brand-logo">
         <div>
           <h1>Personal Expense Tracker</h1>
           <p class="subtitle">100% Local • Private • Lightweight</p>
         </div>
       </div>
       <div class="header-actions">
-        <button id="btn-export-csv" class="btn btn-secondary" title="Export transactions to CSV">📥 Export CSV</button>
-        <button id="btn-settings-modal" class="btn btn-secondary" title="Initial balance and preferences">⚙️ Settings</button>
+        <button id="btn-export-csv" class="btn btn-secondary" title="Export transactions to CSV">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+          Export CSV
+        </button>
+        <button id="btn-settings-modal" class="btn btn-secondary" title="Initial balance and preferences">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          Settings
+        </button>
       </div>
     </header>
 
     <!-- Top KPI Cards -->
     <section class="kpi-grid">
       <div class="kpi-card">
-        <div class="kpi-label">Current Balance</div>
+        <div class="kpi-top">
+          <span class="kpi-label">Current Balance</span>
+          <svg class="kpi-icon text-primary" viewBox="0 0 24 24"><path fill="currentColor" d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        </div>
         <div id="kpi-current-balance" class="kpi-value text-primary">€0.00</div>
         <div class="kpi-hint">Base + Net Flow</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Monthly Inflow</div>
+        <div class="kpi-top">
+          <span class="kpi-label">Monthly Inflow</span>
+          <svg class="kpi-icon text-success" viewBox="0 0 24 24"><path fill="currentColor" d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+        </div>
         <div id="kpi-monthly-income" class="kpi-value text-success">€0.00</div>
-        <div class="kpi-hint"><span id="kpi-recurring-income">€0.00</span> fixed</div>
+        <div class="kpi-hint"><span id="kpi-recurring-income">€0.00</span> regular</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Monthly Outflow</div>
+        <div class="kpi-top">
+          <span class="kpi-label">Monthly Outflow</span>
+          <svg class="kpi-icon text-danger" viewBox="0 0 24 24"><path fill="currentColor" d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM10 11V7h4v4h3l-5 5-5-5h3z"/></svg>
+        </div>
         <div id="kpi-monthly-expense" class="kpi-value text-danger">€0.00</div>
         <div class="kpi-hint"><span id="kpi-recurring-expense">€0.00</span> fixed</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Runway Status</div>
+        <div class="kpi-top">
+          <span class="kpi-label">Runway Status</span>
+          <svg class="kpi-icon text-info" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        </div>
         <div id="kpi-runway" class="kpi-value text-info">--</div>
         <div class="kpi-hint" id="kpi-net-flow">Net: €0.00 / mo</div>
       </div>
@@ -49,15 +70,24 @@
 
     <!-- Navigation Tabs -->
     <nav class="nav-tabs">
-      <button class="tab-btn active" data-tab="tab-ledger">Transactions & Overview</button>
-      <button class="tab-btn" data-tab="tab-scenarios">Runway & Scenario Simulator</button>
+      <button class="tab-btn active" data-tab="tab-ledger">
+        <svg class="svg-icon-sm" viewBox="0 0 24 24"><path fill="currentColor" d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+        Transactions & Overview
+      </button>
+      <button class="tab-btn" data-tab="tab-scenarios">
+        <svg class="svg-icon-sm" viewBox="0 0 24 24"><path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+        Runway & Scenario Simulator
+      </button>
     </nav>
 
     <!-- Tab 1: Ledger & Overview -->
     <main id="tab-ledger" class="tab-content active">
       <!-- Quick Add Form -->
       <section class="card quick-add-card">
-        <h3>Add Transaction</h3>
+        <h3>
+          <svg class="svg-icon-sm text-primary" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          Add Transaction
+        </h3>
         <form id="form-add-transaction" class="quick-add-form">
           <div class="form-group">
             <label for="tx-type">Type</label>
@@ -108,7 +138,10 @@
       <div class="dashboard-split">
         <section class="card breakdown-section">
           <div class="card-header">
-            <h3>Spending by Category</h3>
+            <h3>
+              <svg class="svg-icon-sm text-primary" viewBox="0 0 24 24"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+              Spending by Category
+            </h3>
           </div>
           <div id="category-bars" class="category-bars-container">
             <p class="text-muted">No expenses recorded yet.</p>
@@ -117,7 +150,10 @@
 
         <section class="card transactions-section">
           <div class="card-header flex-between">
-            <h3>Transaction History</h3>
+            <h3>
+              <svg class="svg-icon-sm text-primary" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+              Transaction History
+            </h3>
             <div class="table-filters">
               <input type="text" id="filter-search" placeholder="Search notes/category...">
               <select id="filter-type">
@@ -153,15 +189,25 @@
       <div class="scenario-layout">
         <!-- Controls Column -->
         <section class="card scenario-controls">
-          <h3>Scenario "What-If" Controls</h3>
-          <p class="text-muted font-sm">Tweak variables to see how your runway and future net worth respond over time.</p>
+          <h3>
+            <svg class="svg-icon-sm text-primary" viewBox="0 0 24 24"><path fill="currentColor" d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
+            Scenario "What-If" Controls
+          </h3>
+          <p class="text-muted font-sm">Simulate exact salary amounts and cost changes to predict your 12-month runway and savings.</p>
 
+          <!-- Exact Salary Input & Slider -->
           <div class="control-box">
             <div class="slider-header">
-              <label for="slider-income">Income Change: <span id="val-income" class="badge">0%</span></label>
+              <label for="input-exact-salary">Target Monthly Salary (€):</label>
+              <span id="badge-salary-delta" class="badge">€0 / mo</span>
             </div>
-            <input type="range" id="slider-income" min="-50" max="50" step="5" value="0">
-            <span class="range-hint">-50% (Job loss/cut) to +50% (Raise/Side project)</span>
+            <div class="salary-input-row">
+              <input type="number" id="input-exact-salary" min="0" max="25000" step="50" placeholder="e.g. 3500">
+            </div>
+            <input type="range" id="slider-salary" min="0" max="10000" step="50" value="0">
+            <div class="baseline-note">
+              Baseline salary: <strong id="lbl-base-salary">€0.00</strong> / month
+            </div>
           </div>
 
           <div class="control-box">
@@ -169,7 +215,7 @@
               <label for="slider-fixed">Fixed Cost Adjustment: <span id="val-fixed" class="badge">€0</span></label>
             </div>
             <input type="range" id="slider-fixed" min="-500" max="1000" step="50" value="0">
-            <span class="range-hint">-€500 (cheaper flat) to +€1,000 (rent rise/extra loans)</span>
+            <span class="range-hint">-€500 (cheaper rent) to +€1,000 (rent rise / loan)</span>
           </div>
 
           <div class="control-box">
@@ -181,7 +227,7 @@
           </div>
 
           <div class="scenario-actions">
-            <button id="btn-reset-scenarios" class="btn btn-secondary">↺ Reset Sliders</button>
+            <button id="btn-reset-scenarios" class="btn btn-secondary">↺ Reset to Baseline</button>
           </div>
         </section>
 
@@ -209,7 +255,7 @@
           <div class="runway-insight-box">
             <h4>💡 Financial Insight</h4>
             <div id="scenario-insight-text" class="insight-text">
-              Adjust sliders on the left to simulate personal scenarios.
+              Adjust your target monthly salary on the left to see live runway changes.
             </div>
           </div>
 

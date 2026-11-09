@@ -10,7 +10,7 @@ let state = {
     type: ''
   },
   scenario: {
-    income_delta_pct: 0,
+    scenario_monthly_income: null,
     fixed_delta_eur: 0,
     variable_delta_pct: 0
   }
@@ -22,7 +22,6 @@ const formatEUR = (num) => {
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
-  // Set default date to today
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('tx-date').value = today;
 
@@ -40,6 +39,7 @@ function setupEventListeners() {
       document.getElementById(btn.dataset.tab).classList.add('active');
 
       if (btn.dataset.tab === 'tab-scenarios') {
+        syncScenarioBaseline();
         runScenarioSimulation();
       }
     });
@@ -145,15 +145,25 @@ function setupEventListeners() {
     }
   });
 
-  // Scenario Sliders
-  const sliderIncome = document.getElementById('slider-income');
+  // Exact Salary Simulation Controls
+  const inputSalary = document.getElementById('input-exact-salary');
+  const sliderSalary = document.getElementById('slider-salary');
   const sliderFixed = document.getElementById('slider-fixed');
   const sliderVariable = document.getElementById('slider-variable');
 
-  sliderIncome.addEventListener('input', (e) => {
-    const val = parseInt(e.target.value);
-    document.getElementById('val-income').textContent = `${val >= 0 ? '+' : ''}${val}%`;
-    state.scenario.income_delta_pct = val;
+  inputSalary.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value) || 0;
+    sliderSalary.value = val;
+    state.scenario.scenario_monthly_income = val;
+    updateSalaryDeltaBadge(val);
+    runScenarioSimulation();
+  });
+
+  sliderSalary.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value) || 0;
+    inputSalary.value = val;
+    state.scenario.scenario_monthly_income = val;
+    updateSalaryDeltaBadge(val);
     runScenarioSimulation();
   });
 
@@ -172,15 +182,54 @@ function setupEventListeners() {
   });
 
   document.getElementById('btn-reset-scenarios').addEventListener('click', () => {
-    sliderIncome.value = 0;
+    syncScenarioBaseline(true);
     sliderFixed.value = 0;
     sliderVariable.value = 0;
-    document.getElementById('val-income').textContent = '0%';
     document.getElementById('val-fixed').textContent = '€0';
     document.getElementById('val-variable').textContent = '0%';
-    state.scenario = { income_delta_pct: 0, fixed_delta_eur: 0, variable_delta_pct: 0 };
+    state.scenario.fixed_delta_eur = 0;
+    state.scenario.variable_delta_pct = 0;
     runScenarioSimulation();
   });
+}
+
+function updateSalaryDeltaBadge(salary) {
+  const baseSalary = state.summary ? state.summary.total_income : 0;
+  const delta = salary - baseSalary;
+  const badge = document.getElementById('badge-salary-delta');
+  if (Math.abs(delta) < 0.01) {
+    badge.textContent = 'Current Baseline';
+    badge.style.background = 'var(--accent-primary)';
+    badge.style.color = '#0f172a';
+  } else if (delta > 0) {
+    badge.textContent = `+${formatEUR(delta)} vs base`;
+    badge.style.background = 'var(--color-success)';
+    badge.style.color = '#fff';
+  } else {
+    badge.textContent = `${formatEUR(delta)} vs base`;
+    badge.style.background = 'var(--color-danger)';
+    badge.style.color = '#fff';
+  }
+}
+
+function syncScenarioBaseline(forceReset = false) {
+  if (!state.summary) return;
+  const baseIncome = state.summary.total_income || 0;
+  document.getElementById('lbl-base-salary').textContent = formatEUR(baseIncome);
+
+  const inputSalary = document.getElementById('input-exact-salary');
+  const sliderSalary = document.getElementById('slider-salary');
+
+  // Set slider max to at least 2x current income or 10,000
+  const maxScale = Math.max(10000, Math.ceil((baseIncome * 2.5) / 1000) * 1000);
+  sliderSalary.max = maxScale;
+
+  if (state.scenario.scenario_monthly_income === null || forceReset) {
+    state.scenario.scenario_monthly_income = baseIncome;
+    inputSalary.value = baseIncome;
+    sliderSalary.value = baseIncome;
+    updateSalaryDeltaBadge(baseIncome);
+  }
 }
 
 // --- Data Fetching ---
@@ -204,6 +253,7 @@ async function loadData() {
     // If on scenario tab, update simulation
     const activeTab = document.querySelector('.tab-btn.active');
     if (activeTab && activeTab.dataset.tab === 'tab-scenarios') {
+      syncScenarioBaseline();
       runScenarioSimulation();
     }
   } catch (err) {
@@ -330,12 +380,16 @@ window.deleteTransaction = async function(id) {
 async function runScenarioSimulation() {
   if (!state.summary) return;
 
+  const targetSalary = state.scenario.scenario_monthly_income !== null 
+    ? state.scenario.scenario_monthly_income 
+    : state.summary.total_income;
+
   const payload = {
     starting_balance: state.summary.current_balance,
     base_monthly_income: state.summary.total_income,
     base_fixed_expense: state.summary.recurring_fixed_expense,
     base_variable_expense: state.summary.variable_expense,
-    income_delta_pct: state.scenario.income_delta_pct,
+    scenario_monthly_income: targetSalary,
     fixed_delta_eur: state.scenario.fixed_delta_eur,
     variable_delta_pct: state.scenario.variable_delta_pct,
     months: 12
@@ -376,13 +430,13 @@ function renderScenarioResults(sim) {
   const netMonthly = sim.scenario_monthly_net;
   let text = '';
   if (netMonthly > 0) {
-    text = `Under this scenario, you will save <strong>+${formatEUR(netMonthly)}</strong> every month. By month 12, your balance will reach <strong>${formatEUR(p12)}</strong>.`;
+    text = `With a monthly salary of <strong>${formatEUR(sim.scenario_monthly_income)}</strong>, your net monthly surplus will be <strong>+${formatEUR(netMonthly)}</strong>. By month 12, your projected balance reaches <strong>${formatEUR(p12)}</strong>.`;
   } else if (netMonthly === 0) {
-    text = `You are perfectly breaking even (€0 net monthly). Your balance remains static at <strong>${formatEUR(sim.starting_balance)}</strong>.`;
+    text = `At <strong>${formatEUR(sim.scenario_monthly_income)}</strong>/month, you are breaking even (€0 net monthly). Your balance remains static at <strong>${formatEUR(sim.starting_balance)}</strong>.`;
   } else {
     const burn = Math.abs(netMonthly);
     const monthsLeft = (sim.starting_balance / burn).toFixed(1);
-    text = `<span class="text-danger">⚠️ Under this scenario, you run a deficit of <strong>-${formatEUR(burn)}</strong>/mo.</span> Your balance will deplete in <strong>${monthsLeft} months</strong> without corrective actions.`;
+    text = `<span class="text-danger">⚠️ At <strong>${formatEUR(sim.scenario_monthly_income)}</strong>/month, you have a monthly deficit of <strong>-${formatEUR(burn)}</strong>.</span> Your balance will deplete in <strong>${monthsLeft} months</strong>.`;
   }
   insightEl.innerHTML = text;
 
@@ -392,7 +446,7 @@ function renderScenarioResults(sim) {
 
 function formatDelta(elemId, delta) {
   const el = document.getElementById(elemId);
-  if (delta === 0) {
+  if (Math.abs(delta) < 0.01) {
     el.textContent = 'Identical to baseline';
     el.className = 'proj-delta font-sm text-muted';
   } else if (delta > 0) {
